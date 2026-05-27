@@ -1,0 +1,9 @@
+.vscode
+src
+node_modules
+.gitignore
+tsconfig.json
+AGENTS.md
+.commandcode
+.agents
+skills-lock.json

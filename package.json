@@ -1,0 +1,187 @@
+{
+  "name": "command-code-chat",
+  "displayName": "Command Code Chat",
+  "description": "Chat sidebar for Command Code — the coding agent that learns your taste",
+  "version": "0.2.0",
+  "publisher": "commandcode",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/commandcode/command-code-chat"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Chat",
+    "Other"
+  ],
+  "keywords": [
+    "command-code",
+    "ai",
+    "coding-agent",
+    "chat"
+  ],
+  "activationEvents": [
+    "onView:commandCodeChat.chatView"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "commandCodeChat-sidebar",
+          "title": "Command Code Chat",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "commandCodeChat-sidebar": [
+        {
+          "id": "commandCodeChat.chatView",
+          "name": "Chat",
+          "type": "webview"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "commandCodeChat.newChat",
+        "title": "Command Code Chat: New Chat"
+      },
+      {
+        "command": "commandCodeChat.stopRun",
+        "title": "Command Code Chat: Stop Current Run"
+      },
+      {
+        "command": "commandCodeChat.clearQueue",
+        "title": "Command Code Chat: Clear Queue"
+      },
+      {
+        "command": "commandCodeChat.clearContext",
+        "title": "Command Code Chat: Clear Context Chips"
+      },
+      {
+        "command": "commandCodeChat.addCurrentFile",
+        "title": "Command Code Chat: Add Current File to Context"
+      },
+      {
+        "command": "commandCodeChat.addSelection",
+        "title": "Command Code Chat: Add Selection to Context"
+      },
+      {
+        "command": "commandCodeChat.openSettings",
+        "title": "Command Code Chat: Open Settings"
+      }
+    ],
+    "configuration": {
+      "title": "Command Code Chat",
+      "properties": {
+        "commandCodeChat.commandPath": {
+          "type": "string",
+          "default": "command-code",
+          "description": "Path to the Command Code CLI executable."
+        },
+        "commandCodeChat.defaultMode": {
+          "type": "string",
+          "default": "plan",
+          "enum": [
+            "plan",
+            "standard",
+            "auto-accept"
+          ],
+          "description": "Default permission mode for new chats."
+        },
+        "commandCodeChat.maxTurns": {
+          "type": "number",
+          "default": 10,
+          "minimum": 1,
+          "description": "Maximum conversation turns in non-interactive mode."
+        },
+        "commandCodeChat.trustProject": {
+          "type": "boolean",
+          "default": false,
+          "description": "Auto-trust the project (skip initial permission prompt)."
+        },
+        "commandCodeChat.skipOnboarding": {
+          "type": "boolean",
+          "default": true,
+          "description": "Skip taste onboarding for automated runs."
+        },
+        "commandCodeChat.includeOpenFile": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include active file path in the prompt."
+        },
+        "commandCodeChat.includeSelection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include selected text from the active editor in the prompt."
+        },
+        "commandCodeChat.historyTurns": {
+          "type": "number",
+          "default": 8,
+          "description": "Recent chat history turns to include in each prompt."
+        },
+        "commandCodeChat.maxContextFileKb": {
+          "type": "number",
+          "default": 120,
+          "minimum": 1,
+          "description": "Maximum file size (KB) to read into context via # file references."
+        },
+        "commandCodeChat.clearContextAfterSend": {
+          "type": "boolean",
+          "default": false,
+          "description": "Clear context chips after sending a message."
+        },
+        "commandCodeChat.enableQueue": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable message queue system."
+        },
+        "commandCodeChat.enableSlashCommands": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable slash commands in chat input."
+        },
+        "commandCodeChat.enableHashFileReferences": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable # file references with autocomplete."
+        },
+        "commandCodeChat.enableAtReferences": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable @ context references with autocomplete."
+        },
+        "commandCodeChat.compactMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use extra-compact spacing in the chat UI."
+        },
+        "commandCodeChat.debug": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable debug logging to the extension output channel."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "tsc -p ./ --noEmit"
+  },
+  "dependencies": {
+    "cross-spawn": "^7.0.6"
+  },
+  "devDependencies": {
+    "@types/cross-spawn": "^6.0.6",
+    "@types/node": "^20.11.5",
+    "@types/vscode": "^1.85.0",
+    "strip-ansi": "^6.0.1",
+    "typescript": "^5.3.3"
+  }
+}
