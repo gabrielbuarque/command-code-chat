@@ -41,6 +41,12 @@ export interface QueueItem {
   mode: "plan" | "standard" | "auto-accept";
 }
 
+export interface ModelOption {
+  id: string;
+  label: string;
+  description: string;
+}
+
 export interface PersistedState {
   messages: ChatMessage[];
   chips: ContextChip[];

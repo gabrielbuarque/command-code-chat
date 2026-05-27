@@ -3,6 +3,10 @@ import type { ActivityEvent } from "./types";
 
 let eventSeq = 0;
 
+export function resetEventSequenceForTests(): void {
+  eventSeq = 0;
+}
+
 export function parseChunk(text: string): ActivityEvent[] {
   const clean = stripAnsi(text);
   const events: ActivityEvent[] = [];
@@ -26,6 +30,9 @@ function makeId(): string {
 function classifyLine(line: string): ActivityEvent {
   const lower = line.toLowerCase();
 
+  const isBulletLine = /^[-*•\u2022]\s+/.test(line);
+  const isNumberedLine = /^\d+[.)]\s+/.test(line);
+
   // Thought/Thinking patterns
   if (
     lower.startsWith("thought for") ||
@@ -43,7 +50,8 @@ function classifyLine(line: string): ActivityEvent {
   // TODO patterns
   if (
     lower.includes("todo") ||
-    (line.match(/^\d+\. /) && !line.includes("=") && !line.includes("http"))
+    (isNumberedLine && !line.includes("=") && !line.includes("http")) ||
+    (isBulletLine && lower.includes("todo"))
   ) {
     return {
       id: makeId(),
@@ -57,7 +65,10 @@ function classifyLine(line: string): ActivityEvent {
   if (
     lower.startsWith("read ") ||
     lower.match(/^read\s+\S+\s+\d+ lines?/) ||
-    lower.match(/^reading\s/)
+    lower.match(/^reading\s/) ||
+    lower.startsWith("opening ") ||
+    lower.startsWith("scanning ") ||
+    lower.startsWith("listing ")
   ) {
     return {
       id: makeId(),
@@ -75,7 +86,10 @@ function classifyLine(line: string): ActivityEvent {
     lower.startsWith("creating ") ||
     lower.startsWith("created ") ||
     lower.startsWith("saving ") ||
-    lower.startsWith("saved ")
+    lower.startsWith("saved ") ||
+    lower.startsWith("applying ") ||
+    lower.startsWith("applied ") ||
+    lower.startsWith("patch applied")
   ) {
     return {
       id: makeId(),
@@ -93,7 +107,9 @@ function classifyLine(line: string): ActivityEvent {
     lower.startsWith("modifying ") ||
     lower.startsWith("modified ") ||
     lower.startsWith("patching ") ||
-    lower.startsWith("patched ")
+    lower.startsWith("patched ") ||
+    lower.startsWith("updating ") ||
+    lower.startsWith("updated ")
   ) {
     return {
       id: makeId(),
@@ -110,7 +126,7 @@ function classifyLine(line: string): ActivityEvent {
     lower.startsWith("exec ") ||
     lower.startsWith("executing ") ||
     (lower.startsWith("$ ") || lower.startsWith("> ")) ||
-    lower.match(/^(npm|node|python|git|ls|cd|mkdir|rm|cp|mv|cat|echo|grep|find|chmod|curl|wget|docker|kubectl)\b/)
+    lower.match(/^(npm|pnpm|yarn|node|python|git|ls|cd|mkdir|rm|cp|mv|cat|echo|grep|find|chmod|curl|wget|docker|kubectl|command-code)\b/)
   ) {
     return {
       id: makeId(),
@@ -126,11 +142,29 @@ function classifyLine(line: string): ActivityEvent {
     lower.startsWith("❌") ||
     lower.includes("error:") ||
     lower.includes("failed") ||
-    lower.includes("exception")
+    lower.includes("exception") ||
+    lower.includes("timed out") ||
+    lower.includes("permission denied")
   ) {
     return {
       id: makeId(),
       type: "error",
+      message: line,
+      timestamp: Date.now(),
+    };
+  }
+
+  if (
+    lower.startsWith("done") ||
+    lower.startsWith("completed") ||
+    lower.startsWith("finished") ||
+    lower.startsWith("success") ||
+    lower.startsWith("summary") ||
+    lower.startsWith("all set")
+  ) {
+    return {
+      id: makeId(),
+      type: "done",
       message: line,
       timestamp: Date.now(),
     };

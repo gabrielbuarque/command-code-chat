@@ -22,9 +22,6 @@
     "coding-agent",
     "chat"
   ],
-  "activationEvents": [
-    "onView:commandCodeChat.chatView"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -71,6 +68,10 @@
         "title": "Command Code Chat: Add Selection to Context"
       },
       {
+        "command": "commandCodeChat.runDiagnostics",
+        "title": "Command Code Chat: Run Diagnostics"
+      },
+      {
         "command": "commandCodeChat.openSettings",
         "title": "Command Code Chat: Open Settings"
       }
@@ -82,6 +83,33 @@
           "type": "string",
           "default": "command-code",
           "description": "Path to the Command Code CLI executable."
+        },
+        "commandCodeChat.model": {
+          "type": "string",
+          "default": "kimi-k2.5",
+          "description": "Command Code model to use for chat sessions."
+        },
+        "commandCodeChat.enableIdeSetup": {
+          "type": "boolean",
+          "default": false,
+          "description": "Experimental. Pass --ide-setup to Command Code. Disabled by default because it can intercept print-mode chats with IDE setup messages."
+        },
+        "commandCodeChat.idleTimeoutMs": {
+          "type": "number",
+          "default": 300000,
+          "minimum": 0,
+          "description": "Kill the CLI if it stays idle for too long (milliseconds)."
+        },
+        "commandCodeChat.autoRetryOnServerError": {
+          "type": "boolean",
+          "default": true,
+          "description": "Retry once with a fallback model if the CLI returns an internal server error."
+        },
+        "commandCodeChat.maxQueueLength": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "description": "Maximum number of queued messages retained in memory."
         },
         "commandCodeChat.defaultMode": {
           "type": "string",
@@ -172,16 +200,18 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "lint": "tsc -p ./ --noEmit"
+    "lint": "tsc -p ./ --noEmit",
+    "test": "npm run compile && node --test out/tests/*.test.js",
+    "diagnose": "npm run compile && node scripts/diagnose.mjs"
   },
   "dependencies": {
-    "cross-spawn": "^7.0.6"
+    "cross-spawn": "^7.0.6",
+    "strip-ansi": "^6.0.1"
   },
   "devDependencies": {
     "@types/cross-spawn": "^6.0.6",
     "@types/node": "^20.11.5",
     "@types/vscode": "^1.85.0",
-    "strip-ansi": "^6.0.1",
     "typescript": "^5.3.3"
   }
 }

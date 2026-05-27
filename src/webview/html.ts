@@ -8,6 +8,10 @@ export function bodyHtml(): string {
       <button data-mode="standard">Std</button>
       <button data-mode="auto-accept" class="danger">Auto</button>
     </div>
+    <label class="model-wrap" for="model-select">
+      <span class="model-label">model</span>
+      <select id="model-select"></select>
+    </label>
     <span class="workspace-tag" id="workspace-tag"></span>
     <div class="header-acts">
       <button class="ctrl-btn" id="stop-btn" title="Stop" disabled>&#x25A0;</button>
@@ -53,6 +57,7 @@ var feed = id('feed'), userInput = id('user-input'), sendBtn = id('send-btn'),
     stopBtn = id('stop-btn'), newChatBtn = id('new-chat-btn'), settingsBtn = id('settings-btn'),
     errorCard = id('error-card'), thinkBar = id('think-bar'), autoWarn = id('auto-accept-warn'),
     workspaceTag = id('workspace-tag'), statusPill = id('status-pill'),
+  modelSelect = id('model-select'),
     chipDock = id('chip-dock'), queueDock = id('queue-dock'), queueList = id('queue-list'),
     autocomplete = id('autocomplete');
 var modeSeg = id('mode-seg');
@@ -65,9 +70,15 @@ function escAttr(s) { return esc(s).replace(/"/g,'&quot;'); }
 /* State */
 var isRunning = false, curMsgEl = null, curMode = 'plan',
     msgSeq = 0, errorTimer = null, chips = [], queue = [], userMsgIndexes = [],
-    tracks = {}; /* turnId -> { activities, rawTranscript, status, code } */
+  tracks = {}; /* turnId -> { activities, rawTranscript, status, code } */
 var shouldAutoScroll = true;
 var displayMode = 'pretty'; /* 'pretty' | 'raw' */
+var modelOptions = [];
+
+window.onerror = function(msg, src, line) {
+  try { showError('Error: ' + msg + (line ? ' (line ' + line + ')' : '')); } catch(e) {}
+  return false;
+};
 
 feed.addEventListener('scroll', function() {
   shouldAutoScroll = (feed.scrollHeight - feed.scrollTop - feed.clientHeight) < 35;
@@ -88,7 +99,49 @@ modeBtns.forEach(function(b) {
 
 function setStatus(s) { statusPill.className = 'status-pill ' + s; statusPill.textContent = s; }
 function showError(msg) { errorCard.innerHTML = esc(msg); errorCard.classList.add('show'); if(errorTimer){clearTimeout(errorTimer)} errorTimer = setTimeout(function(){errorCard.classList.remove('show')},10000); }
-function setWorkspace(root) { workspaceTag.textContent = root ? (root.split('/').pop()||root.split('\\').pop()||root) : ''; }
+function setWorkspace(root) { workspaceTag.textContent = root ? (root.split('/').pop()||root.split('\\\\').pop()||root) : ''; }
+
+function setModelOptions(options) {
+  modelOptions = options || [];
+  if (!modelSelect) return;
+  var current = modelSelect.value;
+  modelSelect.innerHTML = '';
+  modelOptions.forEach(function(opt) {
+    var o = document.createElement('option');
+    o.value = opt.id;
+    o.textContent = opt.label;
+    o.title = opt.description || opt.label;
+    modelSelect.appendChild(o);
+  });
+  if (current && modelOptions.some(function(opt) { return opt.id === current; })) {
+    modelSelect.value = current;
+  }
+}
+
+function setModelUI(modelId) {
+  if (!modelSelect) return;
+  if (modelId && modelOptions.some(function(opt) { return opt.id === modelId; })) {
+    modelSelect.value = modelId;
+    return;
+  }
+  if (modelId) {
+    var existing = Array.from(modelSelect.options).some(function(o) { return o.value === modelId; });
+    if (!existing) {
+      var opt = document.createElement('option');
+      opt.value = modelId;
+      opt.textContent = modelId;
+      opt.title = modelId;
+      modelSelect.appendChild(opt);
+    }
+    modelSelect.value = modelId;
+  }
+}
+
+if (modelSelect) {
+  modelSelect.addEventListener('change', function() {
+    vscode.postMessage({ type: 'setModel', model: modelSelect.value });
+  });
+}
 
 /* FIX: sendOrQueue now creates user + assistant bubbles immediately */
 function sendOrQueue(e) {
@@ -252,6 +305,7 @@ function setRunning(r){
   stopBtn.classList.toggle('danger',r);
   userInput.disabled=r;thinkBar.classList.toggle('show',r);
   modeBtns.forEach(function(b){b.disabled=r});
+  if (modelSelect) modelSelect.disabled = r;
 }
 
 /* Chips / Queue / Clear */
@@ -295,7 +349,7 @@ document.querySelectorAll('.empty-sugg').forEach(function(b){b.addEventListener(
 
 /* Autocomplete */
 var acItems=[],acIdx=-1;
-var SLASH=[{n:'help',d:'Show commands'},{n:'new',d:'New chat'},{n:'clear',d:'Clear messages'},{n:'stop',d:'Stop'},{n:'queue',d:'Queue message'},{n:'mode plan',d:'Plan mode'},{n:'mode standard',d:'Standard mode'},{n:'mode auto',d:'Auto-Accept'},{n:'context',d:'List chips'},{n:'clear-context',d:'Remove chips'},{n:'file',d:'Add file'},{n:'folder',d:'Add folder'},{n:'selection',d:'Add selection'},{n:'open-settings',d:'Settings'}];
+var SLASH=[{n:'help',d:'Show commands'},{n:'new',d:'New chat'},{n:'clear',d:'Clear messages'},{n:'stop',d:'Stop'},{n:'queue',d:'Queue message'},{n:'mode plan',d:'Plan mode'},{n:'mode standard',d:'Standard mode'},{n:'mode auto',d:'Auto-Accept'},{n:'model',d:'Select model'},{n:'status',d:'Show status'},{n:'retry',d:'Retry last message'},{n:'diagnose',d:'Run diagnostics'},{n:'context',d:'List chips'},{n:'clear-context',d:'Remove chips'},{n:'file',d:'Add file'},{n:'folder',d:'Add folder'},{n:'selection',d:'Add selection'},{n:'open-settings',d:'Settings'}];
 var AT=[{n:'workspace',d:'Workspace'},{n:'current-file',d:'Active file'},{n:'selection',d:'Selection'},{n:'open-tabs',d:'Tabs'},{n:'problems',d:'Diagnostics'},{n:'git',d:'Git'}];
 function checkAC(){var val=userInput.value,pos=userInput.selectionStart,before=val.substring(0,pos),ll=before.split('\\n').pop()||'';if(ll.startsWith('/')){var q=ll.slice(1);acItems=SLASH.filter(function(c){return c.n.startsWith(q)});if(acItems.length){showAC(acItems.map(function(c){return{l:'/'+c.n,d:c.d}}));return}}if(ll.startsWith('@')){var q2=ll.slice(1);acItems=AT.filter(function(c){return c.n.startsWith(q2)});if(acItems.length){showAC(acItems.map(function(c){return{l:'@'+c.n,d:c.d}}));return}}if(ll.startsWith('#')){vscode.postMessage({type:'requestFileList',query:ll.slice(1)});return}hideAC();}
 function showAC(items){acIdx=-1;autocomplete.innerHTML='';items.forEach(function(it,i){var d=document.createElement('div');d.className='ac-item';d.innerHTML='<span class="ac-prefix">'+esc(it.l.charAt(0))+'</span><span class="ac-name">'+esc(it.l.slice(1))+'</span><span class="ac-desc">'+esc(it.d)+'</span>';d.addEventListener('click',function(){applyAC(it.l)});autocomplete.appendChild(d)});autocomplete.classList.add('show')}
@@ -310,8 +364,9 @@ function handleSlash(raw){var sp=raw.indexOf(' '),cmd=sp===-1?raw.slice(1):raw.s
 /* PostMessage handler */
 window.addEventListener('message',function(ev){var m=ev.data;
 switch(m.type){
-case'initState':setModeUI(m.mode);setWorkspace(m.root);chips=m.chips||[];renderChips();queue=m.queue||[];renderQueue();if(m.messages&&m.messages.length){hideEmptyState();for(var i=0;i<m.messages.length;i++)addMsg(m.messages[i]);}break;
+case'initState':setModeUI(m.mode);setWorkspace(m.root);setModelOptions(m.models||[]);setModelUI(m.model);chips=m.chips||[];renderChips();queue=m.queue||[];renderQueue();if(m.messages&&m.messages.length){hideEmptyState();for(var i=0;i<m.messages.length;i++)addMsg(m.messages[i]);}break;
 case'initMode':setModeUI(m.mode);break;
+case'initModel':setModelUI(m.model);break;
 case'workspaceInfo':setWorkspace(m.root);break;
 case'chipsUpdate':chips=m.chips;renderChips();break;
 case'queueUpdate':queue=m.queue;renderQueue();break;
@@ -340,6 +395,7 @@ case'turnComplete':
   if (!tracks[m.turnId]) tracks[m.turnId] = { activities: [], rawTranscript: '', status: 'running', code: null };
   tracks[m.turnId].status = m.status;
   tracks[m.turnId].code = m.exitCode;
+  if (m.error && !tracks[m.turnId].rawTranscript) tracks[m.turnId].rawTranscript = '[Erro] ' + m.error;
   setRunning(false);
   setStatus(m.status === 'failed' ? 'error' : (queue.length > 0 ? 'queued' : 'idle'));
   refreshTurnById(m.turnId);
@@ -407,5 +463,8 @@ function addMsg(msg) {
   }
   return el;
 }
+
+/* Signal extension that webview is ready to receive messages */
+vscode.postMessage({ type: 'ready' });
 `;
 }

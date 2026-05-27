@@ -1,0 +1,6 @@
+Este é um arquivo de teste criado pelo Command Code!
+
+Data de criação: 2026-05-27
+Status: Funcionando corretamente ✓
+
+Você pode me pedir para criar, editar, ler ou excluir arquivos a qualquer momento.

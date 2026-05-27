@@ -11,6 +11,10 @@ body{display:flex;flex-direction:column;height:100vh;font-family:var(--vscode-fo
 .mode-seg button.active{background:var(--vscode-button-background);color:var(--vscode-button-foreground)}
 .mode-seg button:disabled{opacity:.35;cursor:not-allowed}
 .mode-seg button.danger.active{background:var(--vscode-inputValidation-warningBackground);color:var(--vscode-inputValidation-warningForeground)}
+.model-wrap{display:flex;align-items:center;gap:4px;flex-shrink:0;padding:0 2px}
+.model-label{font-size:8px;text-transform:uppercase;letter-spacing:.35px;color:var(--vscode-descriptionForeground);opacity:.45}
+.model-wrap select{max-width:138px;font-size:9px;line-height:1.2;padding:2px 5px;border-radius:3px;border:1px solid var(--vscode-panel-border);background:var(--vscode-dropdown-background,var(--vscode-sideBar-background));color:var(--vscode-dropdown-foreground,var(--vscode-foreground));outline:none}
+.model-wrap select:disabled{opacity:.5;cursor:not-allowed}
 .workspace-tag{font-size:9px;color:var(--vscode-descriptionForeground);opacity:.45;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:right}
 .header-acts{display:flex;gap:0;flex-shrink:0}
 .ctrl-btn{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border:none;background:transparent;color:var(--vscode-foreground);cursor:pointer;border-radius:3px;font-size:11px;opacity:.5}

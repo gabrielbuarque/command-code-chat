@@ -25,13 +25,14 @@ code .
 
 ### Layout
 
-The sidebar has five zones:
+The sidebar has six zones:
 
 1. **Header** — brand label, status pill (Idle / Running / Queued / Error), workspace folder name, Stop/New/Settings buttons.
-2. **Mode bar** — Plan, Standard, or Auto-Accept selector. Auto-Accept shows a yellow warning strip.
-3. **Context chips** — below the mode bar. Shows active `#` file, `@` context references. Click × to remove, "Clear" to remove all.
-4. **Message feed** — scrollable conversation. Assistant messages have a blue gutter line. Code blocks have syntax labels and copy buttons. Long messages collapse with "Show more".
-5. **Composer** — the input area with keyboard shortcuts bar. Send button (↑) and Queue button (↩).
+2. **Mode bar** — Plan, Standard, or Auto-Accept selector.
+3. **Model picker** — direct model switcher that mirrors the CLI model flag.
+4. **Context chips** — below the mode bar. Shows active `#` file, `@` context references. Click × to remove, "Clear" to remove all.
+5. **Message feed** — scrollable conversation. Assistant messages have a blue gutter line. Code blocks have syntax labels and copy buttons. Long messages collapse with "Show more".
+6. **Composer** — the input area with keyboard shortcuts bar. Send button (↑) and Queue button (↩).
 
 ### Keyboard Shortcuts
 
@@ -57,6 +58,10 @@ Type `/` to see autocomplete with descriptions.
 | `/stop` | Stop generation |
 | `/queue <msg>` | Queue message |
 | `/mode plan/standard/auto` | Set mode |
+| `/model <name>` | Change the model used by the wrapper |
+| `/status` | Show current mode, model, queue, and context summary |
+| `/retry` | Rerun the last user message |
+| `/diagnose` | Run wrapper diagnostics inside VS Code |
 | `/context` | List chips |
 | `/clear-context` | Remove all chips |
 | `/file <path>` | Add file |
@@ -97,6 +102,11 @@ When the agent is running and you press Enter, the message is queued. Alt+Enter 
 | Setting | Default | Description |
 |---|---|---|
 | `commandCodeChat.commandPath` | `command-code` | CLI path |
+| `commandCodeChat.model` | `kimi-k2.5` | Command Code model used for chat turns |
+| `commandCodeChat.enableIdeSetup` | `true` | Pass `--ide-setup` to share IDE context |
+| `commandCodeChat.idleTimeoutMs` | `300000` | Kill the CLI if it goes idle too long |
+| `commandCodeChat.autoRetryOnServerError` | `true` | Retry once with a fallback model on server errors |
+| `commandCodeChat.maxQueueLength` | `20` | Maximum queued messages kept in memory |
 | `commandCodeChat.defaultMode` | `plan` | Default mode |
 | `commandCodeChat.maxTurns` | `10` | Max turns |
 | `commandCodeChat.trustProject` | `false` | Auto-trust |
@@ -121,7 +131,13 @@ When the agent is running and you press Enter, the message is queued. Alt+Enter 
 - `Command Code Chat: Clear Context`
 - `Command Code Chat: Add Current File to Context`
 - `Command Code Chat: Add Selection to Context`
+- `Command Code Chat: Run Diagnostics`
 - `Command Code Chat: Open Settings`
+
+## Testing and Diagnostics
+
+- `npm test` — runs the unit test suite for parser, prompt core, and diagnostics helpers.
+- `npm run diagnose` — runs a real CLI smoke check against the local `command-code` binary and prints a diagnostic report.
 
 ## Security and Permission Modes
 
@@ -140,6 +156,10 @@ The extension never calls any remote API. All communication uses the local `comm
 **Not authenticated:** `command-code login`
 
 **Permission denied (Linux/macOS):** `chmod +x $(which command-code)`
+
+**Internal Server Error:** try changing `commandCodeChat.model` to `gpt-5.4-mini` or `kimi-k2.5` in Settings.
+
+**Slow or stuck run:** increase `commandCodeChat.idleTimeoutMs` or check whether the selected model is healthy on your account.
 
 ## Known Limitations
 
